@@ -7,6 +7,11 @@ const port = 3000;
 
 const SLACK_URLS = {
   OPEN_VIEWS: 'https://slack.com/api/views.open'
+};
+
+const PAYLOAD_TYPES = {
+  BLOCK_ACTIONS: 'block_actions',
+  MESSAGE_ACTIONS: 'message_action',
 }
 
 // slack POST requests are URL encoded, but the "payload" key is JSON.
@@ -24,7 +29,7 @@ const openModal = (triggerID) => {
       "callback_id": "modal-identifier",
       "title": {
         "type": "plain_text",
-        "text": "Just a modal"
+        "text": "Create an Issue"
       },
       "blocks": [
         {
@@ -42,7 +47,7 @@ const openModal = (triggerID) => {
             },
             "action_id": "button-identifier"
           }
-        }
+        },
       ]
     }
   }
@@ -51,34 +56,42 @@ const openModal = (triggerID) => {
       Authorization: `Bearer ${process.env.BOT_ACCESS_TOKEN}`
     }
   })
-}
+};
 
-/**
- * Responds to any HTTP request.
- *
- * @param {!express:Request} req HTTP request context.
- * @param {!express:Response} res HTTP response context.
- */
-const handleRequest = (req, res) => {
-  const payload = JSON.parse(req.body.payload);
-  console.log('received payload:', payload);
-  const { message, response_url: responseURL, trigger_id: triggerID } = payload;
-  const authenticated = verifyToken(payload.token);
-  if (!authenticated) {
-    return res.sendStatus(401);
-  }
+const handleBlockAction = payload => {
+  console.log('received block action payload:', payload);
+};
+
+const handleMessageAction = payload => {
+  console.log('received message action payload:', payload);
+  const { message, response_url: responseURL, trigger_id: triggerID, type } = payload;
+  console.log('received message:', typeof message.text === 'object' ? JSON.stringify(message.text) : message.text);
   openModal(triggerID).then(() => {
     console.log('successfully opened modal');
   }).catch(err => console.log('failed to open modal:', err));
-  axios.post(responseURL, {
-    text: "I'll create a task using this message in the frm backlog"
-  }).then(() => console.log('successfully posted to response url')).catch(err => console.log('failed to post to response url:', err));
-  return res.sendStatus(200);
 };
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-});
+// handleRequest is the main entry point to the carebear message action.
+const handleRequest = (req, res) => {
+  const payload = JSON.parse(req.body.payload);
+  const authenticated = verifyToken(payload.token);
+  if (authenticated) {
+    // send acknowledgement response. must include an object as the body otherwise slack doesn't recognize it!
+    res.status(200).send({ ok: true });
+  } else {
+    return res.sendStatus(401);
+  }
+  console.log('received payload', payload);
+  switch (payload.type) {
+    case PAYLOAD_TYPES.MESSAGE_ACTIONS:
+      handleMessageAction(payload);
+      break;
+    case PAYLOAD_TYPES.BLOCK_ACTIONS:
+      handleBlockAction(payload);
+      break;
+    default: break;
+  }
+};
 
 app.post('/carebear_create', handleRequest);
 
