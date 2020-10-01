@@ -11,8 +11,6 @@ import {
     CallbackIDs,
     Rank,
     MessageActionPayload,
-    Message,
-    MessageMap,
     ACTION_TYPES,
     BlockActionPayload, ViewSubmissionPayload, Issue
 } from './types'
@@ -169,7 +167,7 @@ const handleRequest = (req: any, res: any) => {
     const authenticated = verifyToken(payload.token);
     if (authenticated) {
         // send acknowledgement response.
-        res.sendStatus(200);
+        res.status(200).send();
     } else {
         return res.sendStatus(401);
     }
