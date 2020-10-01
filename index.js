@@ -48,7 +48,7 @@ const PRIORITY_DESCRIPTIONS = {
 const BUTTON_TYPES = {
   RADIO: "radio_buttons",
   CHECKBOX: "checkboxes",
-}
+};
 
 // slack POST requests are URL encoded, but the "payload" key is JSON.
 app.use(bodyParser.urlencoded({ extended: true }));
