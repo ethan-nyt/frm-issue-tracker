@@ -123,4 +123,5 @@ export interface ViewSubmissionPayload {
 export interface Issue {
     rank: keyof typeof Rank,
     message: Message,
+    user: User
 }

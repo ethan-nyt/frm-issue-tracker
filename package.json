@@ -17,7 +17,7 @@
     "presets": ["@babel/preset-env"]
   },
   "scripts": {
-    "start": "node lib/index.js",
+    "start": "tsc && node lib/index.js",
     "compile": "tsc"
   }
 }

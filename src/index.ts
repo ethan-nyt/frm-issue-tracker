@@ -12,7 +12,7 @@ import {
     Rank,
     MessageActionPayload,
     ACTION_TYPES,
-    BlockActionPayload, ViewSubmissionPayload, Issue
+    BlockActionPayload, ViewSubmissionPayload, Issue, User
 } from './types'
 
 const headers = {
@@ -22,6 +22,7 @@ const headers = {
 const SLACK_URLS = {
     OPEN_VIEWS: 'https://slack.com/api/views.open',
     UPDATE_VIEWS: 'https://slack.com/api/views.update',
+    GET_USER: 'https://slack.com/api/users.info'
 };
 
 const PRIORITY_DESCRIPTIONS = {
@@ -51,6 +52,10 @@ const state: State = {
     // views is a map of user id's to the view that user is currently looking at.
     views: {},
 };
+
+const getUser = (userID: string): Promise<any> => {
+    return axios.get(`${SLACK_URLS.GET_USER}?user=${userID}`, { headers: { ...headers, 'content-type': 'application/x-www-form-urlencoded' } });
+}
 
 const verifyToken = (token: string): boolean => {
     return token === process.env.VERIFICATION_TOKEN;
@@ -118,19 +123,14 @@ const openModal = (triggerID: string, userID: string): Promise<any> => {
                 }
             ]
         }
-    }
-
-    console.log('sending payload:', JSON.stringify(payload));
-
+    };
     return axios.post(SLACK_URLS.OPEN_VIEWS, payload, { headers });
 };
 
 const handleBlockAction = (payload: BlockActionPayload) => {
-    console.log('received block action payload:', JSON.stringify(payload));
     if (payload.actions[0].action_id === ACTION_TYPES.RankIssue) {
         // store the rank temporarily. if another action comes in with type "view_submission", we'll read from state before updating the database with the user's selection in that view.
         state.ranks[payload.view.id] = payload.actions[0].selected_option.text.text;
-        console.log('updated state:', JSON.stringify(state));
     }
 };
 
@@ -145,12 +145,21 @@ const handleMessageAction = (payload: MessageActionPayload) => {
 
 const handleViewSubmission = (payload: ViewSubmissionPayload) => {
     const { view: { id: viewID }, user: { id: userID } } = payload;
-    const issue: Issue = {
-        rank: state.ranks[viewID],
-        message: state.messages[userID],
-    }
-    console.log('send issue to the db:', issue);
-    // TODO integrate with firestore!
+    getUser(userID).then(resp => {
+        const user = resp.data.user;
+        const issue: Issue = {
+            rank: state.ranks[viewID],
+            message: state.messages[userID],
+            user: {
+                id: user.id,
+                name: user.real_name,
+                username: user.name,
+                team_id: user.team_id,
+            },
+        };
+        // TODO integrate with firestore!
+        console.log('send payload to db:', issue);
+    }).catch(console.error);
 
     // may need this if we decide not to send the acknowledgement 200 response until we have written to the db. otherwise the view closes as soon as the acknowledgment is received by slack.
     // const closeModalPayload = {
