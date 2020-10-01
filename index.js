@@ -166,13 +166,15 @@ const handleViewSubmission = payload => {
     message: state.messages[userID],
   }
   console.log('send issue to the db:', issue);
-  
-  const closeModalPayload = {
-  
-  }
-  axios.post(SLACK_URLS.UPDATE_VIEWS, {
-  
-  }, { headers });
+  // TODO integrate with firestore!
+
+  // may need this if we decide not to send the acknowledgement 200 response until we have written to the db. otherwise the view closes as soon as the acknowledgment is received by slack.
+  // const closeModalPayload = {
+  //
+  // }
+  // axios.post(SLACK_URLS.UPDATE_VIEWS, {
+  //
+  // }, { headers });
 }
 
 // handleRequest is the main entry point to the carebear message action.
