@@ -69,7 +69,6 @@ const isThreadedReplyMessage = (message) => {
     return true;
 };
 const postMessage = (channelID, threadTS, text) => {
-    console.log('posting message:', channelID, threadTS, text);
     return axios.post(SLACK_URLS.POST_MESSAGE, { channel: channelID, thread_ts: threadTS, text }, { headers });
 };
 const openModal = (triggerID, userID) => {
@@ -173,7 +172,7 @@ const handleViewSubmission = (payload) => {
             status: types_1.Statuses.Backlog,
         };
         db.collection(FIREBASE_COLLECTION).add(issue).then(() => {
-            postMessage(issue.message.channel.id, issue.message.ts, "An issue has been created in response to this message. The engineer-on-call will look into it ASAP!").then((resp) => console.log('posted message successfully', resp)).catch((err) => console.log('failed to post message:', err));
+            postMessage(issue.message.channel.id, issue.message.ts, "An issue has been created in response to this message. The engineer-on-call will look into it ASAP!").then(() => console.log('posted message successfully')).catch((err) => console.log('failed to post message:', err));
         }).catch((err) => {
             console.log('failed to create issue in firestore. now plz let the user know an issue was not created.');
         });

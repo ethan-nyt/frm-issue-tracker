@@ -21,7 +21,6 @@
     ]
   },
   "scripts": {
-    "start": "tsc && node lib/index.js",
-    "compile": "tsc"
+    "start": "tsc && node server/lib/index.js",
   }
 }
