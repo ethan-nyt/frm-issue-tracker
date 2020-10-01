@@ -17,6 +17,7 @@ export interface Message {
     team_id: string, // the author's team ID
     username: string, // the author's username
     channel: Channel,
+    ts: string,
     [x: string]: any // catch-all for other message properties we dont care about yet.
 }
 
@@ -101,7 +102,7 @@ export interface MessageActionPayload {
     trigger_id: string,
     response_url: string,
     message_ts: string,
-    message: Message
+    message: Message,
     [x: string]: any // catch-all for additional fields we don't use yet.
 }
 
@@ -122,11 +123,17 @@ export interface BlockActionPayload {
 
 export interface ViewSubmissionPayload {
     view: View,
-    user: User
+    user: User,
+    trigger_id: string,
+}
+
+export enum Statuses {
+    Backlog = "backlog"
 }
 
 export interface Issue {
     rank: keyof typeof Rank,
     message: Message,
-    reportingUser: User
+    reportingUser: User,
+    status: string, // TODO why cant I use keyof typeof Statuses here?
 }

@@ -6,21 +6,24 @@ const app = express();
 const port = 3000;
 
 import admin from 'firebase-admin';
+import {
+    ACTION_TYPES,
+    BlockActionPayload,
+    CallbackIDs,
+    Issue, Message,
+    MessageActionPayload,
+    PAYLOAD_TYPES,
+    Rank,
+    State,
+    Statuses,
+    ViewSubmissionPayload
+} from './types'
+
 const cloud = admin.initializeApp({
     credential: admin.credential.applicationDefault(),
     databaseURL: 'https://nyt-care-dev.firebaseio.com'
 });
 const db = cloud.firestore();
-
-import {
-    State,
-    PAYLOAD_TYPES,
-    CallbackIDs,
-    Rank,
-    MessageActionPayload,
-    ACTION_TYPES,
-    BlockActionPayload, ViewSubmissionPayload, Issue, User
-} from './types'
 
 const headers = {
     Authorization: `Bearer ${process.env.BOT_ACCESS_TOKEN}`
@@ -29,7 +32,8 @@ const headers = {
 const SLACK_URLS = {
     OPEN_VIEWS: 'https://slack.com/api/views.open',
     UPDATE_VIEWS: 'https://slack.com/api/views.update',
-    GET_USER: 'https://slack.com/api/users.info'
+    GET_USER: 'https://slack.com/api/users.info',
+    POST_MESSAGE: 'https://slack.com/api/chat.postMessage',
 };
 
 const PRIORITY_DESCRIPTIONS = {
@@ -70,6 +74,19 @@ const getUser = (userID: string): Promise<any> => {
 const verifyToken = (token: string): boolean => {
     return token === process.env.VERIFICATION_TOKEN;
 };
+
+const isThreadedReplyMessage = (message: Message) => {
+    // if there is no thread_ts field, message is not part of a thread
+    if (!message.thread_ts) return false;
+    // if the thread_ts equals the ts, message is the parent message in a thread
+    if (message.thread_ts === message.ts) return false;
+    // if neither of above cases hold, message is a "reply" in a thread.
+    return true;
+};
+
+const postMessage = (channelID: string, threadTS: string, text: string) => {
+    return axios.post(SLACK_URLS.POST_MESSAGE, {channel: channelID, thread_ts: threadTS, text}, { headers });
+}
 
 const openModal = (triggerID: string, userID: string): Promise<any> => {
     const payload = {
@@ -144,15 +161,16 @@ const handleBlockAction = (payload: BlockActionPayload) => {
     }
 };
 
-const handleMessageAction = async (payload: MessageActionPayload) => {
+const handleMessageAction = (payload: MessageActionPayload) => {
     const { message, channel, trigger_id: triggerID, type, user: reportingUser } = payload;
     const authorID = message.user;
+    if (isThreadedReplyMessage(message)) {
+        throw new Error("this feature does not work with threaded reply messages.");
+    }
     getUser(authorID).then(resp => {
         state.messages[reportingUser.id] = {
+            ...message,
             channel,
-            text: message.text,
-            type: message.type,
-            user: message.user,
             team_id: resp.data.user.team_id,
             name: resp.data.user.real_name,
             username: resp.data.user.name
@@ -166,7 +184,7 @@ const handleMessageAction = async (payload: MessageActionPayload) => {
 };
 
 const handleViewSubmission = (payload: ViewSubmissionPayload) => {
-    const { view: { id: viewID }, user: { id: userID } } = payload;
+    const { view: { id: viewID }, user: { id: userID }, trigger_id: triggerID } = payload;
     getUser(userID).then((resp) => {
         const reportingUser = resp.data.user;
         const issue: Issue = {
@@ -177,9 +195,14 @@ const handleViewSubmission = (payload: ViewSubmissionPayload) => {
                 name: reportingUser.real_name,
                 username: reportingUser.name,
                 team_id: reportingUser.team_id,
-            }
+            },
+            status: Statuses.Backlog, // this field will be used on the UI to place the item in the appropriate column.
         };
-        db.collection(FIREBASE_COLLECTION).add(issue).then(() => console.log('successfully created issue in firestore')).catch(console.error);
+        db.collection(FIREBASE_COLLECTION).add(issue).then(() => {
+            postMessage(issue.message.channel.id, issue.message.ts, "An issue has been created in response to this message. The engineer-on-call will look into it ASAP!").then(() => console.log('posted message successfully')).catch((err: any) => console.log('failed to post message:', err));
+        }).catch((err) => {
+            console.log('failed to create issue in firestore. now plz let the user know an issue was not created.')
+        });
 
     }).catch(console.error);
 
