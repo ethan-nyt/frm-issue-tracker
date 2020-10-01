@@ -15,7 +15,7 @@ const PAYLOAD_TYPES = {
 };
 
 const ACTION_IDS = {
-  MARK_PRIORITY: "mark-important",
+  RANK_ISSUE: "rank-issue",
 };
 
 const PRIORITY_LEVELS = {
@@ -37,6 +37,11 @@ const PRIORITY_DESCRIPTIONS = {
     type: 'mrkdwn',
     text: "This issue requires immediate action."
   },
+};
+
+const BUTTON_TYPES = {
+  RADIO: "radio_buttons",
+  CHECKBOX: "checkboxes",
 }
 
 // slack POST requests are URL encoded, but the "payload" key is JSON.
@@ -86,7 +91,7 @@ const openModal = (triggerID) => {
           },
           "accessory": {
             "type": "radio_buttons",
-            "action_id": "this_is_an_action_id",
+            "action_id": ACTION_IDS.RANK_ISSUE,
             "options": [
               {
                 "value": PRIORITY_LEVELS.LOW,
@@ -126,7 +131,8 @@ const openModal = (triggerID) => {
 };
 
 const handleBlockAction = payload => {
-  console.log('received block action payload:', payload);
+  console.log('received block action payload:', JSON.stringify(payload));
+  if (payload.actions[0].action_id === ACTION_IDS.RANK_ISSUE) { console.log('selected option:', payload.actions[0].selected_option.text.text); } else {}
 };
 
 const handleMessageAction = payload => {
