@@ -216,7 +216,7 @@ const handleRequest = (req: any, res: any) => {
     }
 };
 
-app.post('/carebear_create', handleRequest);
+app.post('/create', handleRequest);
 
 app.listen(port, () => {
     console.log(`Care bear is listening at http://localhost:${port}`)
