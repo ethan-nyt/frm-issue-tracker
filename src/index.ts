@@ -1,9 +1,16 @@
-require('dotenv').config()
+require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const bodyParser = require('body-parser');
 const app = express();
 const port = 3000;
+
+import admin from 'firebase-admin';
+const cloud = admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+    databaseURL: 'https://nyt-care-dev.firebaseio.com'
+});
+const db = cloud.firestore();
 
 import {
     State,
@@ -39,6 +46,8 @@ const PRIORITY_DESCRIPTIONS = {
         text: "This issue requires immediate action."
     },
 };
+
+const FIREBASE_COLLECTION = 'care-bear'
 
 // slack POST requests are URL encoded, but the "payload" key is JSON.
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -169,9 +178,9 @@ const handleViewSubmission = (payload: ViewSubmissionPayload) => {
                 username: reportingUser.name,
                 team_id: reportingUser.team_id,
             }
-        }
-        // TODO integrate with firestore!
-        console.log('send payload to db:', issue);
+        };
+        db.collection(FIREBASE_COLLECTION).add(issue).then(() => console.log('successfully created issue in firestore')).catch(console.error);
+
     }).catch(console.error);
 
     // may need this if we decide not to send the acknowledgement 200 response until we have written to the db. otherwise the view closes as soon as the acknowledgment is received by slack.
