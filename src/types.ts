@@ -12,6 +12,11 @@ export interface RankMap {
 export interface Message {
     text: string,
     type: string,
+    user: string, // the author's ID
+    name: string, // the author's name
+    team_id: string, // the author's team ID
+    username: string, // the author's username
+    channel: Channel,
     [x: string]: any // catch-all for other message properties we dont care about yet.
 }
 
@@ -90,7 +95,7 @@ export interface MessageActionPayload {
     token: string,
     action_ts: string,
     team: Team,
-    user: User
+    user: User,
     channel: Channel,
     callback_id: keyof typeof CallbackIDs,
     trigger_id: string,
@@ -123,5 +128,5 @@ export interface ViewSubmissionPayload {
 export interface Issue {
     rank: keyof typeof Rank,
     message: Message,
-    user: User
+    reportingUser: User
 }

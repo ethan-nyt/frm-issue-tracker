@@ -53,6 +53,7 @@ const state: State = {
     views: {},
 };
 
+// TODO define type for the resolved promise value here
 const getUser = (userID: string): Promise<any> => {
     return axios.get(`${SLACK_URLS.GET_USER}?user=${userID}`, { headers: { ...headers, 'content-type': 'application/x-www-form-urlencoded' } });
 }
@@ -134,29 +135,41 @@ const handleBlockAction = (payload: BlockActionPayload) => {
     }
 };
 
-const handleMessageAction = (payload: MessageActionPayload) => {
-    const { message, response_url: responseURL, trigger_id: triggerID, type, user } = payload;
-    state.messages[user.id] = message;
-    openModal(triggerID, user.id).then((resp) => {
-        // update state with the view id for the modal. this way we know which view the user is looking at.
-        state.views[user.id] = resp.data.view.id;
-    }).catch(err => console.log('failed to open modal:', err));
+const handleMessageAction = async (payload: MessageActionPayload) => {
+    const { message, channel, trigger_id: triggerID, type, user: reportingUser } = payload;
+    const authorID = message.user;
+    getUser(authorID).then(resp => {
+        state.messages[reportingUser.id] = {
+            channel,
+            text: message.text,
+            type: message.type,
+            user: message.user,
+            team_id: resp.data.user.team_id,
+            name: resp.data.user.real_name,
+            username: resp.data.user.name
+        };
+        openModal(triggerID, reportingUser.id).then((resp) => {
+            // update state with the view id for the modal. this way we know which view the user is looking at.
+            state.views[reportingUser.id] = resp.data.view.id;
+        }).catch(err => console.log('failed to open modal:', err));
+    })
+
 };
 
 const handleViewSubmission = (payload: ViewSubmissionPayload) => {
     const { view: { id: viewID }, user: { id: userID } } = payload;
-    getUser(userID).then(resp => {
-        const user = resp.data.user;
+    getUser(userID).then((resp) => {
+        const reportingUser = resp.data.user;
         const issue: Issue = {
             rank: state.ranks[viewID],
-            message: state.messages[userID],
-            user: {
-                id: user.id,
-                name: user.real_name,
-                username: user.name,
-                team_id: user.team_id,
-            },
-        };
+            message: state.messages[reportingUser.id],
+            reportingUser: {
+                id: reportingUser.id,
+                name: reportingUser.real_name,
+                username: reportingUser.name,
+                team_id: reportingUser.team_id,
+            }
+        }
         // TODO integrate with firestore!
         console.log('send payload to db:', issue);
     }).catch(console.error);
@@ -180,7 +193,7 @@ const handleRequest = (req: any, res: any) => {
     } else {
         return res.sendStatus(401);
     }
-    console.log('received payload', payload);
+    console.log('received payload', JSON.stringify(payload));
     switch (payload.type) {
         case PAYLOAD_TYPES.MessageActions:
             handleMessageAction(payload);
