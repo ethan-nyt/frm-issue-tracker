@@ -220,7 +220,7 @@ const handleViewSubmission = (payload: ViewSubmissionPayload) => {
 };
 
 // handleRequest is the main entry point to the carebear message action.
-const handleRequest = (req: any, res: any) => {
+const createIssue = (req: any, res: any) => {
     const payload = JSON.parse(req.body.payload);
     const authenticated = verifyToken(payload.token);
     if (authenticated) {
@@ -243,11 +243,23 @@ const handleRequest = (req: any, res: any) => {
     }
 };
 
+const getIssues = (req: any, res: any) => {
+    // check for custom header passed from care-bear-ui
+    const authenticated = verifyToken(req.headers['slack-verification-token']);
+    if (!authenticated) {
+        res.sendStatus(401);
+    } else {
+        res.send('time to look up issues!');
+    }
+};
+
 app.get('/', (req: any, res: any) => {
-    res.status(200).send('hello!');
+    res.status(200).send('care bear is alive and well!');
 });
 
-app.post('/create', handleRequest);
+app.post('/create', createIssue);
+
+app.get('/issues', getIssues);
 
 
 app.listen(port, () => {
