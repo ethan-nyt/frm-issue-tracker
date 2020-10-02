@@ -5,6 +5,7 @@
     "@babel/preset-env": "^7.11.5",
     "axios": "^0.20.0",
     "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "firebase": "^7.21.1",
@@ -21,6 +22,6 @@
     ]
   },
   "scripts": {
-    "start": "tsc && node server/lib/index.js",
+    "start": "tsc && node server/lib/index.js"
   }
 }

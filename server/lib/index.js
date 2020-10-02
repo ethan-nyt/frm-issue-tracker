@@ -3,14 +3,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-require('dotenv').config();
-const express = require('express');
-const axios = require('axios');
-const bodyParser = require('body-parser');
-const app = express();
-const port = 3000;
+const dotenv_1 = __importDefault(require("dotenv"));
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const axios_1 = __importDefault(require("axios"));
+const body_parser_1 = __importDefault(require("body-parser"));
 const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const types_1 = require("./types");
+dotenv_1.default.config();
+const app = express_1.default();
+app.use(cors_1.default());
+const port = 3000;
 const cloud = firebase_admin_1.default.initializeApp({
     credential: firebase_admin_1.default.credential.applicationDefault(),
     databaseURL: 'https://nyt-care-dev.firebaseio.com'
@@ -41,7 +44,7 @@ const PRIORITY_DESCRIPTIONS = {
 };
 const FIREBASE_COLLECTION = 'care-bear';
 // slack POST requests are URL encoded, but the "payload" key is JSON.
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(body_parser_1.default.urlencoded({ extended: true }));
 // the server needs some state in order to track a user's interactions with views that the app opens dynamically within slack.
 const state = {
     // ranks is a map of view id's to the last selected rank in that view.
@@ -53,7 +56,7 @@ const state = {
 };
 // TODO define type for the resolved promise value here
 const getUser = (userID) => {
-    return axios.get(`${SLACK_URLS.GET_USER}?user=${userID}`, { headers: Object.assign(Object.assign({}, headers), { 'content-type': 'application/x-www-form-urlencoded' }) });
+    return axios_1.default.get(`${SLACK_URLS.GET_USER}?user=${userID}`, { headers: Object.assign(Object.assign({}, headers), { 'content-type': 'application/x-www-form-urlencoded' }) });
 };
 const verifyToken = (token) => {
     return token === process.env.VERIFICATION_TOKEN;
@@ -69,7 +72,7 @@ const isThreadedReplyMessage = (message) => {
     return true;
 };
 const postMessage = (channelID, threadTS, text) => {
-    return axios.post(SLACK_URLS.POST_MESSAGE, { channel: channelID, thread_ts: threadTS, text }, { headers });
+    return axios_1.default.post(SLACK_URLS.POST_MESSAGE, { channel: channelID, thread_ts: threadTS, text }, { headers });
 };
 const openModal = (triggerID, userID) => {
     const payload = {
@@ -134,7 +137,7 @@ const openModal = (triggerID, userID) => {
             ]
         }
     };
-    return axios.post(SLACK_URLS.OPEN_VIEWS, payload, { headers });
+    return axios_1.default.post(SLACK_URLS.OPEN_VIEWS, payload, { headers });
 };
 const handleBlockAction = (payload) => {
     if (payload.actions[0].action_id === types_1.ACTION_TYPES.RankIssue) {
@@ -209,6 +212,9 @@ const handleRequest = (req, res) => {
         default: break;
     }
 };
+app.get('/', (req, res) => {
+    res.status(200).send('hello!');
+});
 app.post('/create', handleRequest);
 app.listen(port, () => {
     console.log(`Care bear is listening at http://localhost:${port}`);

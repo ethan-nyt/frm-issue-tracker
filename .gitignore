@@ -1,3 +1,4 @@
 node_modules
 .env
 googleServiceAccount.json
+.DS_STORE

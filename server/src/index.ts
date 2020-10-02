@@ -1,9 +1,8 @@
-require('dotenv').config();
-const express = require('express');
-const axios = require('axios');
-const bodyParser = require('body-parser');
-const app = express();
-const port = 3000;
+import env from 'dotenv'
+import express from 'express';
+import cors from 'cors'
+import axios from 'axios';
+import bodyParser from 'body-parser';
 
 import admin from 'firebase-admin';
 import {
@@ -17,7 +16,12 @@ import {
     State,
     Statuses,
     ViewSubmissionPayload
-} from './types'
+} from './types';
+
+env.config();
+const app = express();
+app.use(cors())
+const port = 3000;
 
 const cloud = admin.initializeApp({
     credential: admin.credential.applicationDefault(),
@@ -239,7 +243,12 @@ const handleRequest = (req: any, res: any) => {
     }
 };
 
+app.get('/', (req: any, res: any) => {
+    res.status(200).send('hello!');
+});
+
 app.post('/create', handleRequest);
+
 
 app.listen(port, () => {
     console.log(`Care bear is listening at http://localhost:${port}`)
