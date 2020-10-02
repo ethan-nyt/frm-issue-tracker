@@ -250,11 +250,24 @@ const getIssues = (req: any, res: any) => {
     if (!authenticated) {
         res.sendStatus(401);
     } else {
-        db.collection('care-bear').get().then((snapshot: any) => {
+        db.collection(FIREBASE_COLLECTION).get().then((snapshot: any) => {
             const docs = snapshot.docs.map((doc: any) => doc.data());
             res.send(docs);
         })
     }
+};
+
+const updateIssue = (req: any, res: any) => {
+    const authenticated = verifyToken(req.headers['slack-verification-token']);
+    if (!authenticated) {
+        res.sendStatus(401);
+    }
+    db.collection(FIREBASE_COLLECTION).doc(req.body.id).update(req.body.updatedIssue).then(() => {
+        res.send('success');
+    }).catch(err => {
+        console.log('error trying to update issue:', err);
+        res.sendStaus(500);
+    });
 };
 
 app.get('/', (req: any, res: any) => {
@@ -262,7 +275,7 @@ app.get('/', (req: any, res: any) => {
 });
 
 app.post('/create', createIssue);
-
+app.post('/update', bodyParser.json(), updateIssue);
 app.get('/issues', getIssues);
 
 

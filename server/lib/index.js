@@ -221,16 +221,29 @@ const getIssues = (req, res) => {
         res.sendStatus(401);
     }
     else {
-        db.collection('care-bear').get().then((snapshot) => {
+        db.collection(FIREBASE_COLLECTION).get().then((snapshot) => {
             const docs = snapshot.docs.map((doc) => doc.data());
             res.send(docs);
         });
     }
 };
+const updateIssue = (req, res) => {
+    const authenticated = verifyToken(req.headers['slack-verification-token']);
+    if (!authenticated) {
+        res.sendStatus(401);
+    }
+    db.collection(FIREBASE_COLLECTION).doc(req.body.id).update(req.body.updatedIssue).then(() => {
+        res.send('success');
+    }).catch(err => {
+        console.log('error trying to update issue:', err);
+        res.sendStaus(500);
+    });
+};
 app.get('/', (req, res) => {
     res.status(200).send('care bear is alive and well!');
 });
 app.post('/create', createIssue);
+app.post('/update', body_parser_1.default.json(), updateIssue);
 app.get('/issues', getIssues);
 app.listen(port, () => {
     console.log(`Care bear is listening at http://localhost:${port}`);
