@@ -239,11 +239,24 @@ const updateIssue = (req, res) => {
         res.sendStaus(500);
     });
 };
+const deleteIssue = (req, res) => {
+    const authenticated = verifyToken(req.headers['slack-verification-token']);
+    if (!authenticated) {
+        res.sendStatus(401);
+    }
+    db.collection(FIREBASE_COLLECTION).doc(req.body.id).delete().then(() => {
+        res.send('success');
+    }).catch(err => {
+        console.log('error trying to delete issue:', err);
+        res.sendStatus(500);
+    });
+};
 app.get('/', (req, res) => {
     res.status(200).send('care bear is alive and well!');
 });
 app.post('/create', createIssue);
 app.post('/update', body_parser_1.default.json(), updateIssue);
+app.post('/delete', body_parser_1.default.json(), deleteIssue);
 app.get('/issues', getIssues);
 app.listen(port, () => {
     console.log(`Care bear is listening at http://localhost:${port}`);

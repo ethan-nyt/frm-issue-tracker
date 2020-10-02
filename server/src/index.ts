@@ -270,12 +270,26 @@ const updateIssue = (req: any, res: any) => {
     });
 };
 
+const deleteIssue = (req: any, res: any) => {
+    const authenticated = verifyToken(req.headers['slack-verification-token']);
+    if (!authenticated) {
+        res.sendStatus(401);
+    }
+    db.collection(FIREBASE_COLLECTION).doc(req.body.id).delete().then(() => {
+        res.send('success')
+    }).catch(err => {
+        console.log('error trying to delete issue:', err);
+        res.sendStatus(500);
+    })
+};
+
 app.get('/', (req: any, res: any) => {
     res.status(200).send('care bear is alive and well!');
 });
 
 app.post('/create', createIssue);
 app.post('/update', bodyParser.json(), updateIssue);
+app.post('/delete', bodyParser.json(), deleteIssue)
 app.get('/issues', getIssues);
 
 
