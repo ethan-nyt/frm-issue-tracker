@@ -162,8 +162,10 @@ const handleMessageAction = (payload) => {
 const handleViewSubmission = (payload) => {
     const { view: { id: viewID }, user: { id: userID }, trigger_id: triggerID } = payload;
     getUser(userID).then((resp) => {
+        const newDocRef = db.collection(FIREBASE_COLLECTION).doc();
         const reportingUser = resp.data.user;
         const issue = {
+            id: newDocRef.id,
             rank: state.ranks[viewID],
             message: state.messages[reportingUser.id],
             reportingUser: {
@@ -174,7 +176,7 @@ const handleViewSubmission = (payload) => {
             },
             status: types_1.Statuses.Backlog,
         };
-        db.collection(FIREBASE_COLLECTION).add(issue).then(() => {
+        newDocRef.set(issue).then(() => {
             postMessage(issue.message.channel.id, issue.message.ts, "An issue has been created in response to this message. The engineer-on-call will look into it ASAP!").then(() => console.log('posted message successfully')).catch((err) => console.log('failed to post message:', err));
         }).catch((err) => {
             console.log('failed to create issue in firestore. now plz let the user know an issue was not created.');
@@ -219,7 +221,10 @@ const getIssues = (req, res) => {
         res.sendStatus(401);
     }
     else {
-        res.send('time to look up issues!');
+        db.collection('care-bear').get().then((snapshot) => {
+            const docs = snapshot.docs.map((doc) => doc.data());
+            res.send(docs);
+        });
     }
 };
 app.get('/', (req, res) => {

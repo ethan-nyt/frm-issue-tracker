@@ -190,8 +190,10 @@ const handleMessageAction = (payload: MessageActionPayload) => {
 const handleViewSubmission = (payload: ViewSubmissionPayload) => {
     const { view: { id: viewID }, user: { id: userID }, trigger_id: triggerID } = payload;
     getUser(userID).then((resp) => {
+        const newDocRef = db.collection(FIREBASE_COLLECTION).doc();
         const reportingUser = resp.data.user;
         const issue: Issue = {
+            id: newDocRef.id,
             rank: state.ranks[viewID],
             message: state.messages[reportingUser.id],
             reportingUser: {
@@ -202,12 +204,11 @@ const handleViewSubmission = (payload: ViewSubmissionPayload) => {
             },
             status: Statuses.Backlog, // this field will be used on the UI to place the item in the appropriate column.
         };
-        db.collection(FIREBASE_COLLECTION).add(issue).then(() => {
+        newDocRef.set(issue).then(() => {
             postMessage(issue.message.channel.id, issue.message.ts, "An issue has been created in response to this message. The engineer-on-call will look into it ASAP!").then(() => console.log('posted message successfully')).catch((err: any) => console.log('failed to post message:', err));
         }).catch((err) => {
             console.log('failed to create issue in firestore. now plz let the user know an issue was not created.')
         });
-
     }).catch(console.error);
 
     // may need this if we decide not to send the acknowledgement 200 response until we have written to the db. otherwise the view closes as soon as the acknowledgment is received by slack.
@@ -249,7 +250,10 @@ const getIssues = (req: any, res: any) => {
     if (!authenticated) {
         res.sendStatus(401);
     } else {
-        res.send('time to look up issues!');
+        db.collection('care-bear').get().then((snapshot: any) => {
+            const docs = snapshot.docs.map((doc: any) => doc.data());
+            res.send(docs);
+        })
     }
 };
 

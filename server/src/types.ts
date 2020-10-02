@@ -132,6 +132,7 @@ export enum Statuses {
 }
 
 export interface Issue {
+    id: string,
     rank: keyof typeof Rank,
     message: Message,
     reportingUser: User,
