@@ -23,6 +23,16 @@ const app = express();
 app.use(cors())
 const port = 3000;
 
+/**
+ * TODOS:
+ * 1. add a timestamp to the model for an issue (can this be done automatically in firebase?)
+ * 2. research gcp memorystore and replace the state mgmt here with that if possible
+ * --> then restructure all this code to prepare for serverless deployment on gcp cloud functions
+ * 3. implement priority within rank
+ * --> when creating an issue, put it at the bottom of the backlog, but this would allow users in the UI to reorder within each rank via drag/drop.
+ * 4. When updating an issue, send another message to the thread describing the update (did someone change the status from backlog -> in progress? in progress -> done?)
+ **/
+
 const cloud = admin.initializeApp({
     credential: admin.credential.applicationDefault(),
     databaseURL: 'https://nyt-care-dev.firebaseio.com'
@@ -60,6 +70,8 @@ const FIREBASE_COLLECTION = 'care-bear'
 // slack POST requests are URL encoded, but the "payload" key is JSON.
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// look into gcp memory store
+// TODO move this state management to another piece of infrastructure. this might not work if there were multiple instances of the app server with a load balancer. Also if this were on a separate piece of infrastructure, could go serverless.
 // the server needs some state in order to track a user's interactions with views that the app opens dynamically within slack.
 const state: State = {
     // ranks is a map of view id's to the last selected rank in that view.
@@ -90,7 +102,7 @@ const isThreadedReplyMessage = (message: Message) => {
 
 const postMessage = (channelID: string, threadTS: string, text: string) => {
     return axios.post(SLACK_URLS.POST_MESSAGE, {channel: channelID, thread_ts: threadTS, text}, { headers });
-}
+};
 
 const openModal = (triggerID: string, userID: string): Promise<any> => {
     const payload = {
@@ -262,7 +274,7 @@ const updateIssue = (req: any, res: any) => {
     if (!authenticated) {
         res.sendStatus(401);
     }
-    db.collection(FIREBASE_COLLECTION).doc(req.body.id).update(req.body.updatedIssue).then(() => {
+    db.collection(FIREBASE_COLLECTION).doc(req.body.updatedIssue.id).update(req.body.updatedIssue).then(() => {
         res.send('success');
     }).catch(err => {
         console.log('error trying to update issue:', err);
@@ -289,7 +301,7 @@ app.get('/', (req: any, res: any) => {
 
 app.post('/create', createIssue);
 app.post('/update', bodyParser.json(), updateIssue);
-app.post('/delete', bodyParser.json(), deleteIssue)
+app.post('/delete', bodyParser.json(), deleteIssue);
 app.get('/issues', getIssues);
 
 

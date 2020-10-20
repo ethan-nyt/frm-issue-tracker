@@ -14,6 +14,15 @@ dotenv_1.default.config();
 const app = express_1.default();
 app.use(cors_1.default());
 const port = 3000;
+/**
+ * TODOS:
+ * 1. add a timestamp to the model for an issue (can this be done automatically in firebase?)
+ * 2. research gcp memorystore and replace the state mgmt here with that if possible
+ * --> then restructure all this code to prepare for serverless deployment on gcp cloud functions
+ * 3. implement priority within rank
+ * --> when creating an issue, put it at the bottom of the backlog, but this would allow users in the UI to reorder within each rank via drag/drop.
+ * 4. When updating an issue, send another message to the thread describing the update (did someone change the status from backlog -> in progress? in progress -> done?)
+ **/
 const cloud = firebase_admin_1.default.initializeApp({
     credential: firebase_admin_1.default.credential.applicationDefault(),
     databaseURL: 'https://nyt-care-dev.firebaseio.com'
@@ -45,6 +54,8 @@ const PRIORITY_DESCRIPTIONS = {
 const FIREBASE_COLLECTION = 'care-bear';
 // slack POST requests are URL encoded, but the "payload" key is JSON.
 app.use(body_parser_1.default.urlencoded({ extended: true }));
+// look into gcp memory store
+// TODO move this state management to another piece of infrastructure. this might not work if there were multiple instances of the app server with a load balancer. Also if this were on a separate piece of infrastructure, could go serverless.
 // the server needs some state in order to track a user's interactions with views that the app opens dynamically within slack.
 const state = {
     // ranks is a map of view id's to the last selected rank in that view.
@@ -232,7 +243,8 @@ const updateIssue = (req, res) => {
     if (!authenticated) {
         res.sendStatus(401);
     }
-    db.collection(FIREBASE_COLLECTION).doc(req.body.id).update(req.body.updatedIssue).then(() => {
+    console.log('req.body.updatedIssue', req.body.updatedIssue);
+    db.collection(FIREBASE_COLLECTION).doc(req.body.updatedIssue.id).update(req.body.updatedIssue).then(() => {
         res.send('success');
     }).catch(err => {
         console.log('error trying to update issue:', err);
