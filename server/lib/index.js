@@ -54,6 +54,7 @@ const PRIORITY_DESCRIPTIONS = {
 };
 const FIREBASE_COLLECTION = "care-bear";
 const REDIS_KEY = "care-bear-redis-123456789";
+const SLACK_VERIFICATION_HEADER = "slack-verification-token";
 // slack POST requests are URL encoded, but the "payload" key is JSON.
 app.use(body_parser_1.default.urlencoded({ extended: true }));
 const redisClient = redis_1.default.createClient(7001, process.env.REDIS_HOST);
@@ -259,7 +260,7 @@ const createIssue = (req, res) => {
 };
 const getIssues = (req, res) => {
     // check for custom header passed from care-bear-ui
-    const authenticated = verifyToken(req.headers["slack-verification-token"]);
+    const authenticated = verifyToken(req.headers[SLACK_VERIFICATION_HEADER]);
     if (!authenticated) {
         res.sendStatus(401);
     }
@@ -273,7 +274,7 @@ const getIssues = (req, res) => {
     }
 };
 const updateIssue = (req, res) => {
-    const authenticated = verifyToken(req.headers["slack-verification-token"]);
+    const authenticated = verifyToken(req.headers[SLACK_VERIFICATION_HEADER]);
     if (!authenticated) {
         res.sendStatus(401);
     }
@@ -289,7 +290,7 @@ const updateIssue = (req, res) => {
     });
 };
 const deleteIssue = (req, res) => {
-    const authenticated = verifyToken(req.headers["slack-verification-token"]);
+    const authenticated = verifyToken(req.headers[SLACK_VERIFICATION_HEADER]);
     if (!authenticated) {
         res.sendStatus(401);
     }
