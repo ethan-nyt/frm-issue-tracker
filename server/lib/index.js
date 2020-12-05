@@ -110,6 +110,7 @@ const getPermalink = (channel, ts) => __awaiter(void 0, void 0, void 0, function
         const result = yield axios_1.default.get(url, {
             headers: Object.assign(Object.assign({}, headers), { "content-type": "application/x-www-form-urlencoded" })
         });
+        console.log('got response from slack:', result);
         if (result.ok) {
             return result.permalink;
         }

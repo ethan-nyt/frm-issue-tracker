@@ -127,6 +127,7 @@ const getPermalink = async (channel: Channel, ts: string): Promise<string> => {
         "content-type": "application/x-www-form-urlencoded"
       }
     });
+    console.log('got response from slack:', result);
     if (result.ok) {
       return result.permalink
     } else {
