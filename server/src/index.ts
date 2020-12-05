@@ -119,7 +119,7 @@ const verifyToken = (token: string): boolean => {
 };
 
 const getPermalink = async (channel: Channel, ts: string): Promise<string> => {
-  const url = `${SLACK_URLS.GET_MESSAGE_LINK}?channel=${channel.id}&ts=${ts}`;
+  const url = `${SLACK_URLS.GET_MESSAGE_LINK}?channel=${channel.id}&message_ts=${ts}`;
   try {
     const result: { ok: boolean, channel: string, permalink: string, error?: string } = await axios.get(url, {
       headers: {
@@ -134,7 +134,7 @@ const getPermalink = async (channel: Channel, ts: string): Promise<string> => {
       throw new Error(result.error)
     }
   } catch (err) {
-    console.log(`failed to get permalink with params: channel: ${JSON.stringify(channel)} ts: ${ts} received error: ${err}`)
+    console.log(`failed to get permalink with params: channel: ${JSON.stringify(channel)} ts: ${ts} received error: ${JSON.stringify(err)}`)
     return ''
   }
 };

@@ -105,7 +105,7 @@ const verifyToken = (token) => {
     return token === process.env.VERIFICATION_TOKEN;
 };
 const getPermalink = (channel, ts) => __awaiter(void 0, void 0, void 0, function* () {
-    const url = `${SLACK_URLS.GET_MESSAGE_LINK}?channel=${channel.id}&ts=${ts}`;
+    const url = `${SLACK_URLS.GET_MESSAGE_LINK}?channel=${channel.id}&message_ts=${ts}`;
     try {
         const result = yield axios_1.default.get(url, {
             headers: Object.assign(Object.assign({}, headers), { "content-type": "application/x-www-form-urlencoded" })
@@ -119,7 +119,7 @@ const getPermalink = (channel, ts) => __awaiter(void 0, void 0, void 0, function
         }
     }
     catch (err) {
-        console.log(`failed to get permalink with params: channel: ${JSON.stringify(channel)} ts: ${ts} received error: ${err}`);
+        console.log(`failed to get permalink with params: channel: ${JSON.stringify(channel)} ts: ${ts} received error: ${JSON.stringify(err)}`);
         return '';
     }
 });
