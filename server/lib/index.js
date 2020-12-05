@@ -200,6 +200,7 @@ const handleViewSubmission = (payload) => {
         .then((resp) => {
         const newDocRef = db.collection(FIREBASE_COLLECTION).doc();
         const reportingUser = resp.data.user;
+        const d = new Date();
         const issue = {
             id: newDocRef.id,
             rank: state.ranks[viewID],
@@ -211,6 +212,7 @@ const handleViewSubmission = (payload) => {
                 team_id: reportingUser.team_id,
             },
             status: types_1.Statuses.Backlog,
+            timestamp: d.toISOString(),
         };
         newDocRef
             .set(issue)
