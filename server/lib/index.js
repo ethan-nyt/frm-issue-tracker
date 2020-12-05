@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -37,6 +46,7 @@ const SLACK_URLS = {
     UPDATE_VIEWS: "https://slack.com/api/views.update",
     GET_USER: "https://slack.com/api/users.info",
     POST_MESSAGE: "https://slack.com/api/chat.postMessage",
+    GET_MESSAGE_LINK: "https://slack.com/api/chat.getPermalink"
 };
 const PRIORITY_DESCRIPTIONS = {
     [types_1.Rank.Low]: {
@@ -94,6 +104,24 @@ const getUser = (userID) => {
 const verifyToken = (token) => {
     return token === process.env.VERIFICATION_TOKEN;
 };
+const getPermalink = (channel, ts) => __awaiter(void 0, void 0, void 0, function* () {
+    const url = `${SLACK_URLS.GET_MESSAGE_LINK}?channel=${channel.id}&ts=${ts}`;
+    try {
+        const result = yield axios_1.default.get(url, {
+            headers: Object.assign(Object.assign({}, headers), { "content-type": "application/x-www-form-urlencoded" })
+        });
+        if (result.ok) {
+            return result.permalink;
+        }
+        else {
+            throw new Error(result.error);
+        }
+    }
+    catch (err) {
+        console.log(`failed to get permalink with params: ${channel} ${ts} received error: ${err}`);
+        return '';
+    }
+});
 const isThreadedReplyMessage = (message) => {
     // if there is no thread_ts field, message is not part of a thread
     if (!message.thread_ts)
@@ -197,11 +225,15 @@ const handleMessageAction = (payload) => {
 const handleViewSubmission = (payload) => {
     const { view: { id: viewID }, user: { id: userID }, trigger_id: triggerID, } = payload;
     getUser(userID)
-        .then((resp) => {
+        .then((resp) => __awaiter(void 0, void 0, void 0, function* () {
         const newDocRef = db.collection(FIREBASE_COLLECTION).doc();
         const reportingUser = resp.data.user;
+        // TODO: generate permalink to the original message so that user on the UI side can easily reference the thread
+        const { ts, channel } = state.messages[reportingUser.id];
+        const link = yield getPermalink(channel, ts);
         const d = new Date();
         const issue = {
+            link,
             id: newDocRef.id,
             rank: state.ranks[viewID],
             message: state.messages[reportingUser.id],
@@ -224,7 +256,7 @@ const handleViewSubmission = (payload) => {
             .catch((err) => {
             console.log("failed to create issue in firestore. now plz let the user know an issue was not created.");
         });
-    })
+    }))
         .catch(console.error);
     // may need this if we decide not to send the acknowledgement 200 response until we have written to the db. otherwise the view closes as soon as the acknowledgment is received by slack.
     // const closeModalPayload = {
