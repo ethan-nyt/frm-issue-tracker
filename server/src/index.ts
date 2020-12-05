@@ -4,7 +4,7 @@ import cors from "cors";
 import axios from "axios";
 import bodyParser from "body-parser";
 import admin from "firebase-admin";
-import redis from "redis";
+// import redis from "redis";
 import {
   ACTION_TYPES,
   BlockActionPayload,
@@ -22,7 +22,7 @@ import {
 env.config();
 const app = express();
 app.use(cors());
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 /**
  * TODOS:
@@ -68,28 +68,28 @@ const PRIORITY_DESCRIPTIONS = {
 };
 
 const FIREBASE_COLLECTION = "care-bear";
-const REDIS_KEY = "care-bear-redis-123456789";
+// const REDIS_KEY = "care-bear-redis-123456789";
 const SLACK_VERIFICATION_HEADER = "slack-verification-token"
 
 // slack POST requests are URL encoded, but the "payload" key is JSON.
 app.use(bodyParser.urlencoded({ extended: true }));
-const redisClient = redis.createClient(7001, process.env.REDIS_HOST);
-redisClient.on("error", (err: any) => console.error("ERR:REDIS:", err));
-redisClient.on('ready', () => {
-  console.log("going to try hitting redis");
-  const payload = {
-    ranks: { "123": "1234567" },
-    views: { "123": "23456" },
-    messages: { "123": { x: 1 } },
-  };
-  redisClient.set(REDIS_KEY, JSON.stringify(payload), (err: any, res: any) => {
-    if (err) {
-      console.log("got an error back from redis:", err);
-    } else {
-      console.log("success response from redis:", res);
-    }
-  });
-});
+// const redisClient = redis.createClient(7001, process.env.REDIS_HOST);
+// redisClient.on("error", (err: any) => console.error("ERR:REDIS:", err));
+// redisClient.on('ready', () => {
+//   console.log("going to try hitting redis");
+//   const payload = {
+//     ranks: { "123": "1234567" },
+//     views: { "123": "23456" },
+//     messages: { "123": { x: 1 } },
+//   };
+//   redisClient.set(REDIS_KEY, JSON.stringify(payload), (err: any, res: any) => {
+//     if (err) {
+//       console.log("got an error back from redis:", err);
+//     } else {
+//       console.log("success response from redis:", res);
+//     }
+//   });
+// });
 
 // look into gcp memory store
 // TODO move this state management to another piece of infrastructure. this might not work if there were multiple instances of the app server with a load balancer. Also if this were on a separate piece of infrastructure, could go serverless.
