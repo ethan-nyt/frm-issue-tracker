@@ -114,11 +114,12 @@ const getPermalink = (channel, ts) => __awaiter(void 0, void 0, void 0, function
             return result.permalink;
         }
         else {
+            console.log('slack API returned error:', result.error);
             throw new Error(result.error);
         }
     }
     catch (err) {
-        console.log(`failed to get permalink with params: ${channel} ${ts} received error: ${err}`);
+        console.log(`failed to get permalink with params: channel: ${JSON.stringify(channel)} ts: ${ts} received error: ${err}`);
         return '';
     }
 });
