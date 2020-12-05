@@ -8,7 +8,7 @@ import admin from "firebase-admin";
 import {
   ACTION_TYPES,
   BlockActionPayload,
-  CallbackIDs,
+  CallbackIDs, Channel,
   Issue,
   Message,
   MessageActionPayload,
@@ -49,6 +49,7 @@ const SLACK_URLS = {
   UPDATE_VIEWS: "https://slack.com/api/views.update",
   GET_USER: "https://slack.com/api/users.info",
   POST_MESSAGE: "https://slack.com/api/chat.postMessage",
+  GET_MESSAGE_LINK: "https://slack.com/api/chat.getPermalink"
 };
 
 const PRIORITY_DESCRIPTIONS = {
@@ -115,6 +116,26 @@ const getUser = (userID: string): Promise<any> => {
 
 const verifyToken = (token: string): boolean => {
   return token === process.env.VERIFICATION_TOKEN;
+};
+
+const getPermalink = async (channel: Channel, ts: string): Promise<string> => {
+  const url = `${SLACK_URLS.GET_MESSAGE_LINK}?channel=${channel.id}&ts=${ts}`;
+  try {
+    const result: { ok: boolean, channel: string, permalink: string, error?: string } = await axios.get(url, {
+      headers: {
+        ...headers,
+        "content-type": "application/x-www-form-urlencoded"
+      }
+    });
+    if (result.ok) {
+      return result.permalink
+    } else {
+      throw new Error(result.error)
+    }
+  } catch (err) {
+    console.log(`failed to get permalink with params: ${channel} ${ts} received error: ${err}`)
+    return ''
+  }
 };
 
 const isThreadedReplyMessage = (message: Message) => {
@@ -243,11 +264,15 @@ const handleViewSubmission = (payload: ViewSubmissionPayload) => {
     trigger_id: triggerID,
   } = payload;
   getUser(userID)
-    .then((resp) => {
+    .then(async (resp) => {
       const newDocRef = db.collection(FIREBASE_COLLECTION).doc();
       const reportingUser = resp.data.user;
+      // TODO: generate permalink to the original message so that user on the UI side can easily reference the thread
+      const { ts, channel } = state.messages[reportingUser.id];
+      const link = await getPermalink(channel, ts);
       const d = new Date();
       const issue: Issue = {
+        link,
         id: newDocRef.id,
         rank: state.ranks[viewID],
         message: state.messages[reportingUser.id],
