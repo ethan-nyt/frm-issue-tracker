@@ -9,4 +9,4 @@
 - Compile typescript down to js and run the server using `npm start`
 
 # Deployment
-- TODO...
+- run `npm run compile` followed by `gcloud app deploy`. the file `app.yaml` tells app engine what to do from there.
